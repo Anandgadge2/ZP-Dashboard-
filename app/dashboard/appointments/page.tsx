@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAllAppointments } from "@/services/appointmentApi";
-import { Calendar, Search } from "lucide-react";
+import { getAllAppointments, updateAppointmentStatus } from "@/services/appointmentApi";
+import { Calendar, Search, Check, AlertTriangle } from "lucide-react";
 
 type Appointment = {
   appointmentId: string;
@@ -27,13 +27,63 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
-    getAllAppointments().then((res) => {
+    fetchAppointments();
+  }, []);
+
+  const fetchAppointments = async () => {
+    try {
+      const res = await getAllAppointments();
       setAppointments(res);
       setLoading(false);
-    });
-  }, []);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (appointmentId: string, newStatus: string) => {
+    setUpdatingId(appointmentId);
+    try {
+      // Update in database
+      await updateAppointmentStatus(appointmentId, newStatus);
+
+      // Update local state
+      setAppointments(
+        appointments.map((a) =>
+          a.appointmentId === appointmentId
+            ? { ...a, status: newStatus as Appointment["status"] }
+            : a
+        )
+      );
+
+      // Show success notification
+      setNotification({
+        type: "success",
+        message: `Status updated to ${newStatus}`,
+      });
+
+      // Auto-hide notification after 3 seconds
+      setTimeout(() => setNotification(null), 3000);
+
+      // Refresh data from server to ensure sync
+      setTimeout(() => {
+        fetchAppointments();
+      }, 1000);
+    } catch (error) {
+      console.error("Error updating status:", error);
+      setNotification({
+        type: "error",
+        message: "Failed to update status",
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const filteredAppointments = appointments.filter((a) => {
     const matchesSearch =
@@ -61,6 +111,32 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Notification */}
+      {notification && (
+        <div
+          className={`p-4 rounded-lg flex items-center gap-3 ${
+            notification.type === "success"
+              ? "bg-green-50 border border-green-200"
+              : "bg-red-50 border border-red-200"
+          }`}
+        >
+          {notification.type === "success" ? (
+            <Check className="text-green-600" size={20} />
+          ) : (
+            <AlertTriangle className="text-red-600" size={20} />
+          )}
+          <p
+            className={`font-semibold ${
+              notification.type === "success"
+                ? "text-green-800"
+                : "text-red-800"
+            }`}
+          >
+            {notification.message}
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
@@ -142,6 +218,9 @@ export default function AppointmentsPage() {
               <th className="px-6 py-4 text-left font-semibold text-gray-700">
                 Status
               </th>
+              <th className="px-6 py-4 text-left font-semibold text-gray-700">
+                Change Status
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -178,11 +257,27 @@ export default function AppointmentsPage() {
                       {a.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    <select
+                      value={a.status}
+                      onChange={(e) => handleStatusChange(a.appointmentId, e.target.value)}
+                      disabled={updatingId === a.appointmentId}
+                      className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="CONFIRMED">Confirmed</option>
+                      <option value="CANCELLED">Cancelled</option>
+                      <option value="COMPLETED">Completed</option>
+                    </select>
+                    {updatingId === a.appointmentId && (
+                      <span className="ml-2 text-xs text-blue-600 font-semibold">Updating...</span>
+                    )}
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                   No appointments found matching your criteria
                 </td>
               </tr>

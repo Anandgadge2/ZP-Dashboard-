@@ -4,6 +4,8 @@ import { useState } from "react";
 import { login } from "@/services/authApi";
 import { useRouter } from "next/navigation";
 import { LogIn, AlertCircle } from "lucide-react";
+import PasswordInput from "@/components/PasswordInput";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -59,7 +61,8 @@ export default function LoginPage() {
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 mt-1 text-xs font-bold">
                 ✓
-              </div>\n              <p className="text-gray-700">Schedule and track appointments</p>
+              </div>
+              <p className="text-gray-700">Schedule and track appointments</p>
             </div>
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 mt-1 text-xs font-bold">
@@ -81,8 +84,8 @@ export default function LoginPage() {
               <div className="w-16 h-16 bg-gradient-to-br from-[#1f3c88] to-[#1a2d66] rounded-xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4 shadow-lg">
                 G2
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">G2C Admin</h1>
-              <p className="text-gray-500 text-sm mt-1">Login to your account</p>
+              <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>
+              <p className="text-gray-500 text-sm mt-1">Access the admin panel</p>
             </div>
 
             {/* Desktop Title */}
@@ -118,18 +121,17 @@ export default function LoginPage() {
                 />
               </div>
 
-              {/* Password Field */}
+              {/* Password Field with Eye Toggle */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Password
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
+                  name="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                  disabled={isLoading}
+                  className="px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 />
               </div>
 
@@ -153,15 +155,22 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Footer Info */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            {/* Signup Link */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-center text-gray-600 text-sm">
-                Need help?{" "}
-                <a href="#" className="text-blue-600 hover:underline font-medium">
-                  Contact Support
-                </a>
+                Don't have an account?{" "}
+                <Link href="/admin-signup" className="text-blue-600 hover:underline font-semibold">
+                  Sign up here
+                </Link>
               </p>
             </div>
+
+            {/* Back to Home */}
+            <p className="text-center text-gray-600 text-sm mt-3">
+              <Link href="/" className="text-gray-500 hover:text-gray-700 underline">
+                Back to Home
+              </Link>
+            </p>
           </div>
 
           {/* Demo Credentials */}

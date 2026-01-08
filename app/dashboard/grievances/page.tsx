@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAllGrievances } from "@/services/grievanceApi";
-import { AlertCircle, Search } from "lucide-react";
+import { getAllGrievances, updateGrievanceStatus } from "@/services/grievanceApi";
+import { AlertCircle, Search, Check, AlertTriangle } from "lucide-react";
 
 type Grievance = {
   grievanceId: string;
@@ -31,13 +31,63 @@ export default function GrievancesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
-    getAllGrievances().then((res) => {
+    fetchGrievances();
+  }, []);
+
+  const fetchGrievances = async () => {
+    try {
+      const res = await getAllGrievances();
       setGrievances(res);
       setLoading(false);
-    });
-  }, []);
+    } catch (error) {
+      console.error("Error fetching grievances:", error);
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (grievanceId: string, newStatus: string) => {
+    setUpdatingId(grievanceId);
+    try {
+      // Update in database
+      await updateGrievanceStatus(grievanceId, newStatus);
+
+      // Update local state
+      setGrievances(
+        grievances.map((g) =>
+          g.grievanceId === grievanceId
+            ? { ...g, status: newStatus as Grievance["status"] }
+            : g
+        )
+      );
+
+      // Show success notification
+      setNotification({
+        type: "success",
+        message: `Status updated to ${newStatus}`,
+      });
+
+      // Auto-hide notification after 3 seconds
+      setTimeout(() => setNotification(null), 3000);
+
+      // Refresh data from server to ensure sync
+      setTimeout(() => {
+        fetchGrievances();
+      }, 1000);
+    } catch (error) {
+      console.error("Error updating status:", error);
+      setNotification({
+        type: "error",
+        message: "Failed to update status",
+      });
+      setTimeout(() => setNotification(null), 3000);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const filteredGrievances = grievances.filter((g) => {
     const matchesSearch =
@@ -65,6 +115,32 @@ export default function GrievancesPage() {
 
   return (
     <div className="space-y-6">
+      {/* Notification */}
+      {notification && (
+        <div
+          className={`p-4 rounded-lg flex items-center gap-3 ${
+            notification.type === "success"
+              ? "bg-green-50 border border-green-200"
+              : "bg-red-50 border border-red-200"
+          }`}
+        >
+          {notification.type === "success" ? (
+            <Check className="text-green-600" size={20} />
+          ) : (
+            <AlertTriangle className="text-red-600" size={20} />
+          )}
+          <p
+            className={`font-semibold ${
+              notification.type === "success"
+                ? "text-green-800"
+                : "text-red-800"
+            }`}
+          >
+            {notification.message}
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
@@ -141,6 +217,9 @@ export default function GrievancesPage() {
                 Status
               </th>
               <th className="px-6 py-4 text-left font-semibold text-gray-700">
+                Change Status
+              </th>
+              <th className="px-6 py-4 text-left font-semibold text-gray-700">
                 Created Date
               </th>
             </tr>
@@ -173,6 +252,22 @@ export default function GrievancesPage() {
                       {g.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    <select
+                      value={g.status}
+                      onChange={(e) => handleStatusChange(g.grievanceId, e.target.value)}
+                      disabled={updatingId === g.grievanceId}
+                      className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="PENDING">Pending</option>
+                      <option value="IN_PROGRESS">In Progress</option>
+                      <option value="RESOLVED">Resolved</option>
+                      <option value="REJECTED">Rejected</option>
+                    </select>
+                    {updatingId === g.grievanceId && (
+                      <span className="ml-2 text-xs text-blue-600 font-semibold">Updating...</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-gray-600">
                     {new Date(g.createdAt).toLocaleDateString()}
                   </td>
@@ -180,7 +275,7 @@ export default function GrievancesPage() {
               ))
             ) : (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
                   No grievances found matching your criteria
                 </td>
               </tr>

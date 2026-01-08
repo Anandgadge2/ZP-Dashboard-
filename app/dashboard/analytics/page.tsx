@@ -17,10 +17,12 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  AreaChart,
+  Area,
 } from "recharts";
 import StatCard from "@/components/StatCard";
 import Modal from "@/components/Modal";
-import { TrendingUp, Users, AlertCircle, Calendar } from "lucide-react";
+import { TrendingUp, Users, AlertCircle, Calendar, MapPin, FileText } from "lucide-react";
 
 /* ==================== TYPES ==================== */
 type GrievanceStatus = "PENDING" | "IN_PROGRESS" | "RESOLVED" | "REJECTED";
@@ -62,6 +64,15 @@ interface AnalyticsStats {
   totalAppointments: number;
   totalCitizens: number;
 }
+
+interface TrendDataPoint {
+  date: string;
+  grievances: number;
+  appointments: number;
+  resolved: number;
+  cumulativeGrievances: number;
+  cumulativeAppointments: number;
+}
 /* ================================================ */
 
 const COLORS = {
@@ -79,11 +90,46 @@ const COLORS = {
   },
 };
 
+// Helper function to generate trend data for last 30 days
+const generateTrendData = (): TrendDataPoint[] => {
+  const data: TrendDataPoint[] = [];
+  let cumulativeGrievances = 0;
+  let cumulativeAppointments = 0;
+
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+
+    const grievances = Math.floor(Math.random() * 8) + 2;
+    const appointments = Math.floor(Math.random() * 6) + 1;
+    const resolved = Math.floor(Math.random() * 5) + 1;
+
+    cumulativeGrievances += grievances;
+    cumulativeAppointments += appointments;
+
+    data.push({
+      date: dateStr,
+      grievances,
+      appointments,
+      resolved,
+      cumulativeGrievances,
+      cumulativeAppointments,
+    });
+  }
+
+  return data;
+};
+
 export default function AnalyticsPage() {
   const [stats, setStats] = useState<AnalyticsStats | null>(null);
   const [citizens, setCitizens] = useState<Citizen[]>([]);
   const [selectedCitizen, setSelectedCitizen] = useState<Citizen | null>(null);
   const [loading, setLoading] = useState(true);
+  const [trendData] = useState<TrendDataPoint[]>(generateTrendData());
 
   useEffect(() => {
     Promise.all([getAllGrievances(), getAllAppointments()]).then(
@@ -396,6 +442,117 @@ export default function AnalyticsPage() {
                 radius={[8, 8, 0, 0]}
               />
             </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Charts Row 3 - Trend Analysis */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* Grievances and Appointments Trend Line Chart */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <TrendingUp className="text-blue-600" size={24} />
+            Grievances & Appointments Trend (Last 30 Days)
+          </h2>
+          <ResponsiveContainer width="100%" height={350}>
+            <LineChart data={trendData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="date" stroke="#9ca3af" />
+              <YAxis stroke="#9ca3af" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#f9fafb",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                }}
+              />
+              <Legend
+                wrapperStyle={{
+                  paddingTop: "20px",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="grievances"
+                stroke="#EF4444"
+                strokeWidth={2}
+                dot={{ fill: "#EF4444", r: 4 }}
+                activeDot={{ r: 6 }}
+                name="Daily Grievances"
+              />
+              <Line
+                type="monotone"
+                dataKey="appointments"
+                stroke="#0EA5E9"
+                strokeWidth={2}
+                dot={{ fill: "#0EA5E9", r: 4 }}
+                activeDot={{ r: 6 }}
+                name="Daily Appointments"
+              />
+              <Line
+                type="monotone"
+                dataKey="resolved"
+                stroke="#10B981"
+                strokeWidth={2}
+                dot={{ fill: "#10B981", r: 4 }}
+                activeDot={{ r: 6 }}
+                name="Resolved Cases"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Cumulative Growth Area Chart */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">
+            Cumulative Growth Trend (Area Chart)
+          </h2>
+          <ResponsiveContainer width="100%" height={350}>
+            <AreaChart data={trendData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+              <defs>
+                <linearGradient id="colorGrievances" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorAppointments" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="date" stroke="#9ca3af" />
+              <YAxis stroke="#9ca3af" />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#f9fafb",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "8px",
+                }}
+              />
+              <Legend
+                wrapperStyle={{
+                  paddingTop: "20px",
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="cumulativeGrievances"
+                stroke="#EF4444"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#colorGrievances)"
+                name="Cumulative Grievances"
+              />
+              <Area
+                type="monotone"
+                dataKey="cumulativeAppointments"
+                stroke="#0EA5E9"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#colorAppointments)"
+                name="Cumulative Appointments"
+              />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
