@@ -31,9 +31,7 @@ export default function CitizenLoginPage() {
       // Extract citizen name from email (e.g., "rajesh@example.com" -> "Rajesh Kumar")
       // For demo purposes, we'll map emails to citizen names
       const emailToCitizenMap: { [key: string]: string } = {
-        "rajesh@example.com": "Rajesh Kumar",
-        "priya@example.com": "Priya Singh",
-        "amit@example.com": "Amit Patel",
+        "rajesh@example.com": "Rajesh Kumar"
       };
       
       const citizenName = emailToCitizenMap[email] || "Citizen";
@@ -117,7 +115,7 @@ export default function CitizenLoginPage() {
             )}
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5 ">
               {/* Email Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">

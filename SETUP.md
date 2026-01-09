@@ -23,7 +23,7 @@ Welcome to the ZP Dashboard - a production-grade Government-to-Citizen (G2C) Adm
 
 | Section | Link | Purpose |
 |---------|------|---------|
-| **Admin Login** | http://localhost:3000/login | Department head/admin portal |
+| **Admin Login** | http://localhost:3001/login | Department head/admin portal |
 | **Admin Signup** | http://localhost:3000/admin-signup | Register new admin users |
 | **Admin Dashboard** | http://localhost:3000/dashboard | Main admin dashboard |
 | **Analytics** | http://localhost:3000/dashboard/analytics | Performance metrics & charts |

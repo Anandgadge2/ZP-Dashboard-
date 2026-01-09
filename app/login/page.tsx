@@ -28,6 +28,7 @@ export default function LoginPage() {
 
       localStorage.setItem("token", res.data.token);
       router.push("/dashboard");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(
         err?.response?.data?.message || "Login failed. Check credentials."
@@ -158,7 +159,7 @@ export default function LoginPage() {
             {/* Signup Link */}
             <div className="mt-6 pt-6 border-t border-gray-200">
               <p className="text-center text-gray-600 text-sm">
-                Don't have an account?{" "}
+                Do not have an account?{" "}
                 <Link href="/admin-signup" className="text-blue-600 hover:underline font-semibold">
                   Sign up here
                 </Link>
@@ -180,7 +181,7 @@ export default function LoginPage() {
               <strong>Username:</strong> admin
             </p>
             <p className="text-xs text-blue-800">
-              <strong>Password:</strong> password
+              <strong>Password:</strong> admin@123
             </p>
           </div>
         </div>
